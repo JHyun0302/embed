@@ -1,0 +1,47 @@
+plugins {
+    id 'java'
+}
+
+group = 'hello'
+version = '0.0.1-SNAPSHOT'
+sourceCompatibility = '17'
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    //스프링 MVC 추가
+    implementation 'org.springframework:spring-webmvc:6.0.4'
+
+    //내장 톰켓 추가
+    implementation 'org.apache.tomcat.embed:tomcat-embed-core:10.1.5'
+}
+
+tasks.named('test') {
+    useJUnitPlatform()
+}
+
+//일반 Jar 생성 : Jar 실행시 EmbedTomcatSpringMain 메인함수 실행
+//문제 : '내'가 만든 클래스만 포함됨. 외부 라이브러리(스프링)가 없어서 실행시 에러 발생
+task buildJar(type: Jar) {
+    manifest {
+        attributes 'Main-Class': 'hello.embed.EmbedTomcatSpringMain'
+    }
+    with jar
+}
+
+//Fat Jar 생성 : 외부 라이브러리 속 클래스를 포함해서 Jar 파일 생성
+/**
+ * 단점
+ * 1. 어떤 라이브러리가 포함되어 있는지 확인하기 어렵
+ * 2. 파일명 중복 해결 불가 (심각한 문제)
+ */
+task buildFatJar(type: Jar) {
+    manifest {
+        attributes 'Main-Class': 'hello.embed.EmbedTomcatSpringMain'
+    }
+    duplicatesStrategy = DuplicatesStrategy.WARN
+    from { configurations.runtimeClasspath.collect { it.isDirectory() ? it : zipTree(it) } }
+    with jar
+}
